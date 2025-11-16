@@ -328,6 +328,23 @@ body{
     grid-template-columns:1fr;
   }
 }
+
+/* ==== INÍCIO DA ATUALIZAÇÃO DE RESPONSIVIDADE ==== */
+@media (max-width: 768px) {
+  /* Adiciona a barra de rolagem horizontal na tabela */
+  .table-wrapper {
+    overflow-x: auto;
+  }
+  /* Força a tabela a ter uma largura mínima, ativando a rolagem */
+  .table {
+    min-width: 650px; 
+  }
+  /* Impede que o texto dentro das células quebre */
+  .table th, .table td {
+    white-space: nowrap;
+  }
+}
+/* ==== FIM DA ATUALIZAÇÃO DE RESPONSIVIDADE ==== */
 </style>
 </head>
 <body>

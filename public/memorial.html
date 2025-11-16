@@ -354,6 +354,47 @@ body{
     grid-template-columns:1fr;
   }
 }
+
+/* ==== INÍCIO DA ATUALIZAÇÃO DE RESPONSIVIDADE ==== */
+@media (max-width: 600px) {
+  .tv-wrapper {
+    padding: 1rem; /* Diminui o padding geral */
+  }
+  .tv-frame {
+    padding: 1.5rem 1rem; /* Diminui o padding da "moldura" */
+  }
+  .tv-header {
+    flex-direction: column; /* Empilha o cabeçalho */
+    gap: .75rem;
+  }
+  .tv-title-block {
+    max-width: 100%;
+  }
+  .tv-name { font-size: 1.5rem; }
+  .tv-quote { font-size: .9rem; }
+  .tv-badge { align-self: flex-start; }
+
+  /* Permite que o texto dos botões da lista quebre a linha */
+  .tv-item-title {
+    max-width: 100%;
+    white-space: normal; /* <-- Correção principal */
+    font-size: .85rem;
+  }
+  .tv-item-desc {
+    font-size: .8rem;
+  }
+  .tv-slide-text {
+    font-size: .9rem;
+  }
+  .tv-slide-meta {
+    font-size: .8rem;
+  }
+  .tv-slide-texto .tv-slide-body {
+    padding: 1.5rem 1rem .5rem;
+  }
+}
+/* ==== FIM DA ATUALIZAÇÃO DE RESPONSIVIDADE ==== */
+
 </style>
 </head>
 <body>
@@ -672,5 +713,6 @@ body{
   startAuto();
 })();
 </script>
+
 </body>
 </html>
