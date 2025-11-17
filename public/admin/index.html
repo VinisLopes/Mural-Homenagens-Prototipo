@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>OFEBAS • Painel de Administração</title>
 
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+
 <style>
 :root{
   --bg:#020617;
@@ -396,74 +398,11 @@ body{
             <th>Falecido</th>
             <th>Código / Sala</th>
             <th>Status</th>
-            <th style="width:240px;">Ações</th>
+            <th style="width:300px;">Ações</th>
           </tr>
         </thead>
-        <tbody>
-          <tr data-status="aprovado">
-            <td>Maria Aparecida</td>
-            <td>12345 • Sala 1</td>
-            <td>
-              <span class="badge badge-ok">
-                <span class="badge-dot"></span>
-                Aprovado
-              </span>
-            </td>
-            <td>
-              <div class="actions-row">
-                <button class="action-btn action-btn-primary" onclick="abrirTV()">
-                  <span>▶</span> Exibir na TV
-                </button>
-                <button class="action-btn" onclick="abrirMuralFamilia()">
-                  <span>👁</span> Ver mural
-                </button>
-              </div>
-            </td>
-          </tr>
-
-          <tr data-status="pendente">
-            <td>Antônio dos Santos</td>
-            <td>67890 • Sala 3</td>
-            <td>
-              <span class="badge badge-wait">
-                <span class="badge-dot"></span>
-                Pendente
-              </span>
-            </td>
-            <td>
-              <div class="actions-row">
-                <button class="action-btn action-btn-primary" onclick="abrirTV()">
-                  <span>▶</span> Exibir na TV
-                </button>
-                <button class="action-btn" onclick="abrirMuralFamilia()">
-                  <span>✏</span> Revisar conteúdo
-                </button>
-              </div>
-            </td>
-          </tr>
-
-          <tr data-status="revisar">
-            <td>José Pereira</td>
-            <td>43210 • Sala 2</td>
-            <td>
-              <span class="badge badge-review">
-                <span class="badge-dot"></span>
-                Revisar
-              </span>
-            </td>
-            <td>
-              <div class="actions-row">
-                <button class="action-btn action-btn-primary" onclick="abrirTV()">
-                  <span>▶</span> Exibir na TV
-                </button>
-                <button class="action-btn" onclick="abrirMuralFamilia()">
-                  <span>👁</span> Ver mural
-                </button>
-              </div>
-            </td>
-          </tr>
-
-        </tbody>
+        <tbody id="tabela-admin-body">
+          </tbody>
       </table>
     </div>
   </section>
@@ -477,46 +416,150 @@ body{
       Este é um protótipo do painel usado pela equipe da OFEBAS para acompanhar os velórios do dia e programar quais murais serão exibidos nas TVs das salas.
     </p>
     <ul>
-      <li>Visualizar os murais criados pela família para cada falecido.</li>
-      <li>Conferir fotos, vídeos, textos e mensagens enviados.</li>
-      <li>Aprovar o conteúdo e associar o mural à sala de velório.</li>
-      <li>Usar o botão <strong>“Exibir na TV”</strong> para abrir o modo TV na mesma tela.</li>
+      <li>Visualize os murais criados pela família (que são salvos no `localStorage` do navegador).</li>
+      <li>Use o botão <strong>"Ver QR Code"</strong> para exibir o código de cada mural.</li>
+      <li>Use o botão <strong>“Exibir na TV”</strong> para abrir o modo TV (que também lerá do `localStorage`).</li>
     </ul>
   </aside>
 
 </div>
 
-<script>
-/* Navegação: SEM nova aba, sempre na mesma */
+<div id="modalQR" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:100; align-items:center; justify-content:center; padding:1.5rem;">
+  <div style="background:#fff; padding:2rem; border-radius:18px; text-align:center; max-width: 400px; width:100%;">
+    <h3 style="color:#0f172a; margin-bottom:.5rem;">QR Code para Homenagens</h3>
+    <p style="color:#64748b; margin-bottom:1rem; font-size:.9rem;">Escaneie para enviar sua mensagem.</p>
+    <div id="qr-code-container" style="padding:1rem; background:#f8fafc; border-radius:12px; display:inline-block; line-height:0;">
+      </div>
+    <button onclick="fecharModalQR()" style="margin-top:1.5rem; font-size:.8rem; color:#64748b; background:none; border:none; cursor:pointer;">Fechar</button>
+  </div>
+</div>
 
-/* ================== 2. LINK ATUALIZADO ================== */
-function abrirTV(){
-  /* Corrigido de "../public/memorial.html" para "/memorial.html" */
+
+<script>
+/* ================== NAVEGAÇÃO ================== */
+
+function abrirTV(muralId){
+  // Salva qual mural deve ser exibido na TV
+  // Se for nulo, a TV vai mostrar o conteúdo padrão
+  localStorage.setItem('mural_ativo_tv', muralId);
   window.location = "/memorial.html";
 }
 
-/* ================== 3. LINK ATUALIZADO ================== */
 function abrirMuralFamilia(){
-  /* Corrigido de "../memorias/clientes/index.html" para "/memorias/clientes/index.html" */
+  // Link para a página de criação/edição
   window.location = "/memorias/clientes/index.html";
 }
 
-/* botão do topo */
+/* botão do topo - abre a TV sem um mural específico (modo genérico) */
 document.getElementById("abrirTVTopo").addEventListener("click", function(e){
   e.preventDefault();
-  abrirTV();
+  abrirTV(null); // Passa null para carregar o modo TV padrão
 });
 
-/* Filtro de busca + status */
+/* ================== LÓGICA DO MODAL QR CODE ================== */
+const modalQR = document.getElementById('modalQR');
+const qrContainer = document.getElementById('qr-code-container');
+let qrCodeGerado = null; // Para guardar a instância do QR code
+
+function fecharModalQR(){
+  modalQR.style.display = 'none';
+  if(qrCodeGerado) {
+      qrContainer.innerHTML = ''; // Limpa o container (importante!)
+      qrCodeGerado = null;
+  }
+}
+
+function mostrarModalQR(url, nome) {
+  modalQR.querySelector('h3').textContent = 'QR Code para ' + nome;
+  modalQR.style.display = 'flex';
+  
+  // Limpa o anterior, se houver
+  if(qrCodeGerado) {
+      qrContainer.innerHTML = '';
+      qrCodeGerado = null;
+  }
+
+  // Gera o novo QR Code
+  qrCodeGerado = new QRCode(qrContainer, {
+      text: url,
+      width: 200,
+      height: 200,
+      colorDark : "#020617",
+      colorLight : "#ffffff",
+      correctLevel : QRCode.CorrectLevel.H
+  });
+}
+
+/* ================== CARREGAMENTO DA TABELA E FILTROS ================== */
+
 const searchInput = document.getElementById("search");
 const statusFilter = document.getElementById("statusFilter");
-const linhas = Array.from(document.querySelectorAll("#tabelaVelorios tbody tr"));
+const tabelaBody = document.getElementById("tabela-admin-body");
+
+// Função para carregar os murais do localStorage na tabela
+function carregarMuraisNaTabela() {
+  tabelaBody.innerHTML = ''; // Limpa a tabela
+  
+  const muraisDB = JSON.parse(localStorage.getItem('muraisDB')) || {};
+  const muraisArray = Object.values(muraisDB); // Converte o objeto em array
+  
+  if (muraisArray.length === 0) {
+    tabelaBody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:1.5rem; color:var(--muted);">Nenhum mural criado pela família ainda.</td></tr>';
+    return;
+  }
+  
+  muraisArray.forEach(mural => {
+    // Recria a URL completa (o localStorage salva caminhos relativos)
+    // Usamos o window.location.origin para garantir o domínio correto
+    const urlCompleta = new URL(mural.qrUrl, window.location.origin).href;
+
+    // Adiciona a linha na tabela
+    const tr = document.createElement('tr');
+    tr.setAttribute('data-status', 'pendente'); // Status padrão (poderia ser salvo no mural futuramente)
+    tr.innerHTML = `
+      <td>${mural.nome}</td>
+      <td>${mural.id} • Sala ?</td>
+      <td>
+        <span class="badge badge-wait">
+          <span class="badge-dot"></span>
+          Pendente
+        </span>
+      </td>
+      <td>
+        <div class="actions-row">
+          <button class="action-btn action-btn-primary" onclick="abrirTV('${mural.id}')">
+            <span>▶</span> Exibir na TV
+          </button>
+          <button class="action-btn" onclick="abrirMuralFamilia()">
+            <span>👁</span> Ver mural
+          </button>
+          <button class="action-btn" onclick="mostrarModalQR('${urlCompleta}', '${mural.nome}')">
+            <span>🏁</span> Ver QR Code
+          </button>
+        </div>
+      </td>
+    `;
+    tabelaBody.appendChild(tr);
+  });
+
+  // Atualiza os filtros
+  aplicarFiltros();
+}
 
 function aplicarFiltros(){
   const termo = searchInput.value.toLowerCase().trim();
   const statusSelecionado = statusFilter.value; // aprovado, pendente, revisar, todos
+  
+  // Pega as linhas DEPOIS de serem geradas
+  const linhas = Array.from(tabelaBody.querySelectorAll("tr"));
 
   linhas.forEach(tr => {
+    // Checa se é a linha de "nenhum item"
+    if(tr.querySelector('td[colspan="4"]')) {
+      tr.style.display = ""; // Sempre exibe a msg de 'nenhum' se for o caso
+      return;
+    }
+
     const textoLinha = tr.innerText.toLowerCase();
     const statusLinha = tr.getAttribute("data-status");
     const passaBusca = !termo || textoLinha.includes(termo);
@@ -526,8 +569,12 @@ function aplicarFiltros(){
   });
 }
 
+// Listeners dos filtros
 searchInput.addEventListener("input", aplicarFiltros);
 statusFilter.addEventListener("change", aplicarFiltros);
+
+// Carrega a tabela assim que a página abre
+document.addEventListener('DOMContentLoaded', carregarMuraisNaTabela);
 </script>
 
 </body>

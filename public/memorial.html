@@ -6,6 +6,8 @@
 <title>Mural de Homenagens – Exibição na TV</title>
 <meta name="description" content="Tela de exibição do mural de homenagens para uso em TVs nas salas de velório.">
 
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+
 <style>
 :root{
   --bg:#020617;
@@ -344,6 +346,19 @@ body{
   border-color:rgba(129,140,248,.9);
 }
 
+
+/* === NOVO CSS PARA O QR CODE === */
+#qr-code-tv-container {
+  position: absolute;
+  top: 2.2rem;
+  right: 2.4rem;
+  background: #fff;
+  padding: 10px;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0,0,0,.5);
+  line-height: 0; /* Para ajustar o QR code perfeitamente */
+}
+
 /* RESPONSIVO BÁSICO */
 @media (max-width:1000px){
   .tv-wrapper{
@@ -392,6 +407,11 @@ body{
   .tv-slide-texto .tv-slide-body {
     padding: 1.5rem 1rem .5rem;
   }
+  
+  /* Esconde o QR Code em telas muito pequenas */
+  #qr-code-tv-container {
+    display: none;
+  }
 }
 /* ==== FIM DA ATUALIZAÇÃO DE RESPONSIVIDADE ==== */
 
@@ -414,6 +434,10 @@ body{
         <span class="tv-badge" id="tvSala">Sala 3 • Velório das 14h às 17h</span>
       </div>
     </header>
+    
+    <div id="qr-code-tv-container">
+      </div>
+
 
     <section class="tv-main">
 
@@ -606,6 +630,7 @@ body{
 </div>
 
 <script>
+// SCRIPT ORIGINAL DO CARROSSEL
 (function () {
   const slides = document.querySelectorAll('.tv-slide');
   const dots   = document.querySelectorAll('.tv-dot');
@@ -711,6 +736,45 @@ body{
   }
 
   startAuto();
+})();
+
+// === NOVO SCRIPT PARA CARREGAR DADOS DO MURAL ATIVO ===
+(function carregarDadosMural() {
+  const muralId = localStorage.getItem('mural_ativo_tv');
+  if (!muralId || muralId === 'null') {
+    console.log('Nenhum mural ativo encontrado. Usando dados padrão.');
+    // Se nenhum mural estiver ativo, esconde o container do QR
+    const qrContainer = document.getElementById('qr-code-tv-container');
+    if(qrContainer) qrContainer.style.display = 'none';
+    return; // Usa os dados estáticos da página
+  }
+  
+  const muraisDB = JSON.parse(localStorage.getItem('muraisDB')) || {};
+  const mural = muraisDB[muralId];
+  
+  if (!mural) {
+    console.error('Dados do mural não encontrados:', muralId);
+    return;
+  }
+  
+  // Atualiza os textos da tela
+  document.getElementById('tvNome').textContent = 'Em memória de ' + mural.nome;
+  document.getElementById('tvAnos').textContent = `${mural.nasc || '...'} – ${mural.fal || '...'} • "${mural.frase || '...'}"`;
+  
+  // Gera o QR Code na tela
+  const qrContainer = document.getElementById('qr-code-tv-container');
+  // Garante a URL completa
+  const urlCompleta = new URL(mural.qrUrl, window.location.origin).href;
+
+  new QRCode(qrContainer, {
+      text: urlCompleta,
+      width: 90, // Tamanho pequeno para o canto
+      height: 90,
+      colorDark : "#020617",
+      colorLight : "#ffffff",
+      correctLevel : QRCode.CorrectLevel.H
+  });
+  
 })();
 </script>
 

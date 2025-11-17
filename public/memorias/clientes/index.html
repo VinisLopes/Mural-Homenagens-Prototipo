@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Portal da Família • Mural de Homenagens</title>
 
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+
 <style>
 :root{
   --bg:#f6f9ff;
@@ -474,7 +476,7 @@ textarea{resize:vertical;}
 </div>
 
 <script>
-// ======================= RESUMO BÁSICO =======================
+// ======================= RESUMO BÁSICO E BANCO DE DADOS FAKE =======================
 function atualizarResumo(){
   const nome = document.getElementById('falecidoNome').value || 'Nome do falecido';
   const nasc = document.getElementById('falecidoNasc').value || 'Ano de nascimento';
@@ -486,6 +488,42 @@ function atualizarResumo(){
   document.getElementById('resAnos').textContent = `${nasc} – ${fal}`;
   document.getElementById('resFrase').textContent = frase;
   document.getElementById('resResp').textContent  = `Responsável: ${resp}`;
+
+  // --- NOVA LÓGICA DE SALVAR ---
+  // A cada vez que atualiza, salvamos no localStorage para simular.
+  if (document.getElementById('falecidoNome').value) {
+      salvarMuralNoLocalStorage();
+  }
+}
+
+function salvarMuralNoLocalStorage() {
+  const nomeInput = document.getElementById('falecidoNome').value;
+  if (!nomeInput) return; // Não salva se não tiver nome
+  
+  // Cria um ID único (ex: "maria_aparecida_de_souza")
+  const muralId = nomeInput.toLowerCase().replace(/ /g, '_').replace(/[^a-z0-9_]/g, '');
+  
+  // Pega o "banco de dados" do localStorage
+  let muraisDB = JSON.parse(localStorage.getItem('muraisDB')) || {};
+  
+  // Dados que queremos salvar
+  const muralData = {
+      id: muralId,
+      nome: nomeInput,
+      nasc: document.getElementById('falecidoNasc').value,
+      fal: document.getElementById('falecidoFal').value,
+      frase: document.getElementById('falecidoFrase').value,
+      // Este é o link que o QR Code vai ter
+      // O caminho é relativo à pasta /public/
+      qrUrl: `/homenagem.html?mural_id=${muralId}`
+  };
+  
+  // Salva este mural no "banco"
+  muraisDB[muralId] = muralData;
+  
+  // Devolve o "banco" para o localStorage
+  localStorage.setItem('muraisDB', JSON.stringify(muraisDB));
+  console.log('Mural salvo no localStorage:', muralData);
 }
 
 ['falecidoNome','falecidoNasc','falecidoFal','falecidoFrase','responsavel']
